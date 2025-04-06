@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QListWidget, QListWidget
 from PyQt6.QtCore import Qt, QMimeData, QSize
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont, QFontDatabase, QColor
 
+from config import font_path as fp, downloads_path
 
 class FileManager(QMainWindow):
     file_name_len: int = 50
@@ -16,9 +17,11 @@ class FileManager(QMainWindow):
         self.setWindowTitle("File Manager")
         self.setGeometry(100, 100, 700, 500)
 
-        font_path = '../../static/fonts/NunitoSans.ttf'
+        font_path = fp
         QFontDatabase.addApplicationFont(font_path)
+        print(QFontDatabase)
         family = QFontDatabase.applicationFontFamilies(0)
+        print(family)
         self.global_font = QFont(family[0], 12)
         self.setFont(self.global_font)
 
@@ -62,7 +65,7 @@ class FileManager(QMainWindow):
     def load_existing_files(self):
         self.file_list.clear()
         # files = [f for f in os.listdir(path="C:\\Users\\igorm\\Downloads") if os.path.isfile(f)]
-        files = [f for f in os.listdir(path="C:\\Users\\igorm\\Downloads")]
+        files = [f for f in os.listdir(path=downloads_path)]
         for index, file in enumerate(files):
             self.add_file_to_list(file, index)
 
