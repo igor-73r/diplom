@@ -1,18 +1,9 @@
 from typing import Annotated
-from fastapi import APIRouter
-
-from src.database import async_engine
-
-from sqlalchemy import ForeignKey, String, Date, JSON
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from typing import Optional, List
+from typing import List
 
 pk = Annotated[int, mapped_column(primary_key=True)]
-
-router = APIRouter(
-    prefix='/db',
-    tags=['db'],
-)
 
 
 class Base(DeclarativeBase):
@@ -26,17 +17,23 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(length=50), nullable=False)
     email: Mapped[str] = mapped_column(String(length=320), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(length=1024), nullable=False)
-    auth_token: Mapped[str | None]  # remove None
 
-class DataMap(Base):
+    full_data: Mapped[List["FullData"]] = relationship(back_populates="user")
+    chunks: Mapped[List["Chunks"]] = relationship(back_populates="user")
+
+
+class FullData(Base):
     __tablename__ = "full_data"
 
     id: Mapped[pk]
-    name: Mapped[str]
-    hash_func: Mapped[str]
-    size: Mapped[int]
-    chunk_quantity: Mapped[int]
-    user_owner: ForeignKey
+    name: Mapped[str] = mapped_column(String(length=120), nullable=False)
+    hash_func: Mapped[str] = mapped_column(String(length=64), nullable=False)
+    size: Mapped[int] = mapped_column(nullable=False)
+    chunk_quantity: Mapped[int] = mapped_column(nullable=False)
+    user_owner: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="full_data")
+    chunks: Mapped[List["Chunks"]] = relationship(back_populates="full_data")
 
 
 class Chunks(Base):
@@ -54,10 +51,11 @@ class Chunks(Base):
     __tablename__ = "chunks"
 
     id: Mapped[pk]
-    name: Mapped[str]  # uuid.bin
-    chunk_number: Mapped[int]
-    user_holder_id: ForeignKey
-    full_data_id: ForeignKey
-    is_copy: Mapped[bool]
+    name: Mapped[str] = mapped_column(String(length=64), nullable=False)  # uuid.bin
+    chunk_ordinal_number: Mapped[int] = mapped_column(nullable=False)
+    user_holder_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    full_data_id: Mapped[int] = mapped_column(ForeignKey("full_data.id"), nullable=False)
+    is_copy: Mapped[bool] = mapped_column(nullable=False)
 
-
+    user: Mapped["User"] = relationship(back_populates="chunks")
+    full_data: Mapped["FullData"] = relationship(back_populates="chunks")

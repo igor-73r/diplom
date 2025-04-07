@@ -8,6 +8,7 @@ from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont, QFontDatabase
 
 from config import font_path as fp, downloads_path
 
+
 class FileManager(QMainWindow):
     file_name_len: int = 50
     global_font: QFont
@@ -19,9 +20,7 @@ class FileManager(QMainWindow):
 
         font_path = fp
         QFontDatabase.addApplicationFont(font_path)
-        print(QFontDatabase)
         family = QFontDatabase.applicationFontFamilies(0)
-        print(family)
         self.global_font = QFont(family[0], 12)
         self.setFont(self.global_font)
 
