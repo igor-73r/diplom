@@ -2,24 +2,23 @@ import sys
 import os
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QListWidget, QListWidgetItem,
                              QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel,
-                             QFileDialog, QSizePolicy)
-from PyQt6.QtCore import Qt, QMimeData, QSize
+                             QFileDialog)
+from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont, QFontDatabase, QColor
 
-from config import font_path as fp, downloads_path
+from config import font_path as fp, downloads_path, download_icon, delete_icon
 
 
-class FileManager(QMainWindow):
+class ShareSpace(QMainWindow):
     file_name_len: int = 50
     global_font: QFont
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("File Manager")
+        self.setWindowTitle("sharespace")
         self.setGeometry(100, 100, 700, 500)
 
-        font_path = fp
-        QFontDatabase.addApplicationFont(font_path)
+        QFontDatabase.addApplicationFont(fp)
         family = QFontDatabase.applicationFontFamilies(0)
         self.global_font = QFont(family[0], 12)
         self.setFont(self.global_font)
@@ -96,7 +95,7 @@ class FileManager(QMainWindow):
         label.setFont(self.global_font)
 
         delete_btn = QPushButton()
-        delete_btn.setIcon(QIcon("../../static/icons/delete.svg"))
+        delete_btn.setIcon(QIcon(delete_icon))
         delete_btn.setIconSize(QSize(17, 17))
         delete_btn.setFixedWidth(50)
         delete_btn.setStyleSheet("""
@@ -114,7 +113,7 @@ class FileManager(QMainWindow):
         delete_btn.clicked.connect(lambda _, f=file_path: self.delete_file(f))
 
         download_btn = QPushButton()
-        download_btn.setIcon(QIcon("../../static/icons/download.svg"))
+        download_btn.setIcon(QIcon(download_icon))
         download_btn.setIconSize(QSize(30, 30))
         download_btn.setFixedWidth(30)
         download_btn.setStyleSheet("""
@@ -187,6 +186,6 @@ class FileManager(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = FileManager()
+    window = ShareSpace()
     window.show()
     sys.exit(app.exec())

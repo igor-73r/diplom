@@ -17,6 +17,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(length=50), nullable=False)
     email: Mapped[str] = mapped_column(String(length=320), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(length=1024), nullable=False)
+    auth_token: Mapped[str | None]
 
     full_data: Mapped[List["FullData"]] = relationship(back_populates="user")
     chunks: Mapped[List["Chunks"]] = relationship(back_populates="user")
