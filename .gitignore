@@ -1,0 +1,8 @@
+.idea
+venv
+__pycache__/
+_tests/
+.DS_Store
+*.db
+test_dir
+_test.py
