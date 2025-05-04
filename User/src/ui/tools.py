@@ -27,7 +27,7 @@ def validate_path():
     if config.base_path_to_share_folder:
         return os.path.join(config.base_path_to_share_folder, config.base_share_folder_name)
     else:
-        return os.path.join(config.base_path_to_share_folder, config.base_share_folder_name)  #TODO Что то придумать
+        return os.path.join(config.base_path_to_share_folder, config.base_share_folder_name)  # TODO Что то придумать
 
 
 def check_or_create_share_folder(directory_path: str = None):
@@ -86,8 +86,6 @@ def save_tokens(tokens: dict) -> bool:
 def parse_tokens():
     with open(tokens_dir, "r", encoding='utf-8') as f:
         return Tokens(json.load(f))
-
-
 
 
 if __name__ == '__main__':

@@ -57,7 +57,6 @@ class LoginWindow(QDialog):
         email = self.email_input.text()
         password = self.password_input.text()
         response = register(email, password)
-        #TODO После ввода данных и нажатия кнопки, не происходит перезагрузки интерфейса
         if response.status_code == 200:
             self.accept()  # Закрываем окно после успешного входа
 
@@ -67,7 +66,6 @@ class LoginWindow(QDialog):
         email = self.email_input.text()
         password = self.password_input.text()
         response = auth(email, password)
-        # TODO После ввода данных и нажатия кнопки, не происходит перезагрузки интерфейса
         if response.status_code == 200:
             self.accept()  # Закрываем окно после успешного входа
 
@@ -88,12 +86,13 @@ class ShareSpace(QMainWindow):
         self.global_font = QFont(family[0], 12)
         self.setFont(self.global_font)
 
+        self.fetch_window()
+        self.setAcceptDrops(True)
+
+    def fetch_window(self):
         self.user = self.get_user()
         self.initUI()
         self.load_existing_files()
-        self.setAcceptDrops(True)
-
-
 
     @staticmethod
     def init_share_folder():
@@ -146,13 +145,12 @@ class ShareSpace(QMainWindow):
         layout.addWidget(self.add_button)
 
     def auth_exit(self):
-        config = {"is_auth": False}
-        with open('config.json', 'w', encoding='utf-8') as file:
-            json.dump(config, file, ensure_ascii=False, indent=4)
-        self.initUI()
-        self.load_existing_files()
+        from tools import save_tokens
+        save_tokens(tokens={"access_token": "", "refresh_token": "", "token_type": ""})
+        self.fetch_window()
 
-    def get_user(self):
+    @staticmethod
+    def get_user():
         from request_handlers import get_current_user
         user = get_current_user()
         try:
@@ -161,18 +159,14 @@ class ShareSpace(QMainWindow):
         except KeyError:
             return user
 
-
     def show_login_window(self):
         login_dialog = LoginWindow(self)  # self передается как parent
         if login_dialog.exec() == QDialog.DialogCode.Accepted:
-            # TODO После ввода данных и нажатия кнопки, не происходит перезагрузки интерфейса
-            self.initUI()
-            self.load_existing_files()
+            self.fetch_window()
 
     def load_existing_files(self):
         self.file_list.clear()
         if self.user:
-            # print(get_files_by_user_id())
             files = [DataProcessing(kwargs=f) for f in get_files_by_user_id(self.user["id"])]
             for file in files:
                 self.add_file_to_list(file)
