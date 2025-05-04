@@ -1,6 +1,7 @@
 import os
 import json
 from User.src.config import tokens_dir
+from socket import gethostname
 
 
 class Config:
@@ -44,22 +45,31 @@ def check_or_create_share_folder(directory_path: str = None):
         # Проверяем, существует ли директория
         if not os.path.exists(directory_path):
             os.makedirs(directory_path)
-            print("Создана новая папка")
-            # TODO Если папка СОЗДАНА, отправлять запрос к апи (init_folder) с добавлением новой папки для чанков
-        else:
-            print("Папка уже существует")
-
+        fetch_node()
     except Exception as e:
         print(f"Ошибка при обработке директории {directory_path}: {e}")
         return False
 
+def node_is_exist(node: str):
+    from request_handlers import get_node
+    response = get_node(node)
+    if response.json():
+        return True
+    return False
 
-def init_folder():
+def fetch_node():
     """
     api endpoint to add new folder to db
     :return:
     """
-    pass
+    from request_handlers import create_node
+
+    if node_is_exist(gethostname()):
+        return True
+    response = create_node(gethostname())
+    if response.status_code == 201:
+        return True
+    return False
 
 
 def fetch_hosts():
@@ -89,4 +99,5 @@ def parse_tokens():
 
 
 if __name__ == '__main__':
-    check_or_create_share_folder()
+    # check_or_create_share_folder()
+    print(node_is_exist(gethostname()))

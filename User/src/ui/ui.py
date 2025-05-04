@@ -57,6 +57,8 @@ class LoginWindow(QDialog):
         email = self.email_input.text()
         password = self.password_input.text()
         response = register(email, password)
+        if response.status_code == 201:
+            response = auth(email, password)
         if response.status_code == 200:
             self.accept()  # Закрываем окно после успешного входа
 

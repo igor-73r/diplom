@@ -1,25 +1,46 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, UploadFile
 from starlette import status
-from Server.src.models import User, FullData, Chunks
+from Server.src.models import User, FullData, Chunks, Node
 from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.context import CryptContext
 from fastapi.responses import FileResponse
 from sqlalchemy import delete
 
 from Server.src.database import get_async_session
-from .schemas import FullFile, AddChunk, FullFileResponse
+from .schemas import FullFile, AddChunk, FullFileResponse, GetNode, CreateNode
 import os
 
 
 db_dependency = Annotated[AsyncSession, Depends(get_async_session)]
-bcrypt_context = CryptContext(schemes=['bcrypt'], )
 
 
 router = APIRouter(
     prefix='/data',
     tags=['files'],
 )
+
+
+@router.post('/add_node', status_code=status.HTTP_201_CREATED, response_model=GetNode)
+async def add_node(db: db_dependency, node: CreateNode):
+    db_node = Node(pc_name=node.pc_name)
+    try:
+        db.add(db_node)
+        await db.commit()
+        await db.refresh(db_node)
+    except exc.SQLAlchemyError as e:
+        # Node already exist
+        return db_node
+    else:
+        return db_node
+
+@router.get("/get_node/{node_name}", status_code=status.HTTP_200_OK)
+async def get_node(db: db_dependency, node_name: str):
+    try:
+        node = await db.execute(select(Node).filter_by(pc_name=node_name))
+        return node.scalars().one_or_none()
+    except ValueError as e:
+        raise e
 
 @router.post('/add_full_file', status_code=status.HTTP_201_CREATED, response_model=FullFileResponse)
 async def add_full_file(db: db_dependency, file: FullFile):

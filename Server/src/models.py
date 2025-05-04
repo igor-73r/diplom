@@ -10,13 +10,13 @@ class Base(DeclarativeBase):
     pass
 
 
-class Folder(Base):
-    __tablename__ = "folders"
+class Node(Base):
+    __tablename__ = "nodes"
 
     id: Mapped[pk]
     pc_name: Mapped[str] = mapped_column(String(length=80), unique=True, nullable=False)
 
-    chunks: Mapped[List["Chunks"]] = relationship(back_populates="folders")
+    chunks: Mapped[List["Chunks"]] = relationship(back_populates="nodes")
 
 
 class User(Base):
@@ -61,9 +61,9 @@ class Chunks(Base):
     id: Mapped[pk]
     name: Mapped[str] = mapped_column(String(length=64), nullable=False)  # uuid.bin TODO: тут мб стоит указывать полный путь до чанка
     chunk_ordinal_number: Mapped[int] = mapped_column(nullable=False)
-    folder_holder_id: Mapped[int] = mapped_column(ForeignKey("folders.id"), nullable=False)
+    folder_holder_id: Mapped[int] = mapped_column(ForeignKey("nodes.id"), nullable=False)
     full_data_id: Mapped[int] = mapped_column(ForeignKey("full_data.id"), nullable=False)
     is_copy: Mapped[bool] = mapped_column(nullable=False)
 
-    folders: Mapped["Folder"] = relationship(back_populates="chunks")
+    nodes: Mapped["Node"] = relationship(back_populates="chunks")
     full_data: Mapped["FullData"] = relationship(back_populates="chunks")

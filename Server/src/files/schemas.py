@@ -9,6 +9,15 @@ class CreateUser(BaseModel):
     password: str
 
 
+class CreateNode(BaseModel):
+    pc_name: str
+
+
+class GetNode(BaseModel):
+    id: int
+    pc_name: str
+
+
 class BaseUser(BaseModel):
     id: int
     username: str

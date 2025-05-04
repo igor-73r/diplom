@@ -90,6 +90,16 @@ def auth(email: str = None, password: str = None) -> Response:
     return response
 
 
+def create_node(pc_name: str) -> Response:
+    body = {"pc_name": pc_name}
+    response = requests.post(f"{data_host}/add_node", json=body)
+    return response
+
+def get_node(node: str) -> Response:
+    response = requests.get(f"{data_host}/get_node/{node}")
+    return response
+
+
 if __name__ == '__main__':
     # auth("admin@admin.com", "admin")
     print(get_current_user())
