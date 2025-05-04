@@ -2,7 +2,9 @@ import hashlib
 import os
 import glob
 import re
-
+from .request_handlers import get_all_nodes
+from .tools import calculate_nodes_percentage_of_total_space
+from User.src.config import data_host
 
 class Data:
     """
@@ -30,12 +32,6 @@ class Data:
     def _get_file_size(self):
         return os.path.getsize(self.file)
 
-    def _calculate_chunk_quantity(self):
-        num_chunks = self.file_size // self.chunk_size
-        if self.file_size % self.chunk_size != 0:
-            num_chunks += 1
-        return num_chunks
-
     def get_hash(self, file: str = None):
         hasher = hashlib.new(self.hash_algorithm)
         with open(file if file else self.file, 'rb') as f:
@@ -51,9 +47,6 @@ class DataProcessing(Data):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def calculate_chunk_per_user(self) -> int:
-        num_of_users = 4  # временный костыль, потом нужно будет добавить эндпоинт
-        return self._calculate_chunk_quantity() // num_of_users
 
     def split_file(self):
         import requests
@@ -66,31 +59,25 @@ class DataProcessing(Data):
             print(f"Ошибка: файл '{self.file}' не существует.")
             return
 
-        # Создаем папку для частей, если её нет
-        # output_dir = f"{self.file}_parts"
-        # os.makedirs(output_dir, exist_ok=True)
 
-        num_of_chunk = 4
-        self.chunk_size = self.file_size // num_of_chunk + 1000
-        chunk_per_user = 1 #self.calculate_chunk_per_user()
-        # Читаем и записываем части
-        q = 1
-        import json
+        nodes = calculate_nodes_percentage_of_total_space()
+
         with open(self.file, 'rb') as f:
-            for i in range(num_of_chunk // chunk_per_user):
-                for j in range(chunk_per_user):
-                    chunk_data = f.read(self.chunk_size)
-                    body = {
-                        "name": str(uuid.uuid4()),
-                        "chunk_ordinal_number": q,
-                        "user_holder_id": i + 1,
-                        "full_data_id": self.file_id,
-                        "is_copy": False,
-                    }
-                    response = requests.post(f"http://127.0.0.1:8000/auth/upload_chunk?name={body['name']}"
-                                             f"&chunk_ordinal_number={body['chunk_ordinal_number']}&user_holder_id={body['user_holder_id']}"
-                                             f"&full_data_id={body['full_data_id']}&is_copy={body['is_copy']}", files={"file": chunk_data})
-                    q += 1
+            for i, node in enumerate(nodes):
+                # TODO Относительный размер чанков сделал, осталось настроить пути, чтоб все нормально летело и должна быть гойда
+                temp_chunk_size = self.file_size * node["part"]
+                chunk_data = f.read(temp_chunk_size)
+                body = {
+                    "name": str(uuid.uuid4()),
+                    "chunk_ordinal_number": i,
+                    "folder_holder_id": node["id"],
+                    "full_data_id": self.file_id,
+                    "is_copy": False,
+                }
+                response = requests.post(f"{data_host}/upload_chunk?name={body['name']}"
+                                         f"&chunk_ordinal_number={body['chunk_ordinal_number']}&user_holder_id={body['user_holder_id']}"
+                                         f"&full_data_id={body['full_data_id']}&is_copy={body['is_copy']}",
+                                         files={"file": chunk_data})
 
 
     def merge_files(self, chunks_dir, output_file):

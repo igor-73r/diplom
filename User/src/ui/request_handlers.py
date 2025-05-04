@@ -102,4 +102,5 @@ def get_node(node: str) -> Response:
 
 if __name__ == '__main__':
     # auth("admin@admin.com", "admin")
-    print(get_current_user())
+    # print(get_current_user())
+    create_node("HOME-MAIN")

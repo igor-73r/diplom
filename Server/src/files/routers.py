@@ -42,6 +42,16 @@ async def get_node(db: db_dependency, node_name: str):
     except ValueError as e:
         raise e
 
+
+@router.get("/get_nodes", status_code=status.HTTP_200_OK)
+async def get_nodes(db: db_dependency):
+    try:
+        node = await db.execute(select(Node))
+        return node.scalars().all()
+    except ValueError as e:
+        raise e
+
+
 @router.post('/add_full_file', status_code=status.HTTP_201_CREATED, response_model=FullFileResponse)
 async def add_full_file(db: db_dependency, file: FullFile):
     db_full_file = FullData(
@@ -87,7 +97,8 @@ async def upload_chunk(db: db_dependency,
     """
     Тут должна быть попытка закинуть файл пользователю держателю, и если все успешно, тогда добавляем в бд
     """
-
+    from tools import get_chunks_dirs
+    get_chunks_dirs
     user_dir = os.path.join(fake_users_dirs[f"{chunk_data.user_holder_id}"], f"{chunk_data.name}.bin")
     try:
         with open(user_dir, 'wb+') as f:

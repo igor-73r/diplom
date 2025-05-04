@@ -1,14 +1,7 @@
 import os
 import json
-from User.src.config import tokens_dir
+from User.src.config import tokens_dir, base_share_folder_name, base_local_path_to_share_folder, host_list
 from socket import gethostname
-
-
-class Config:
-    def __init__(self, kwargs):
-        self.base_path_to_share_folder = kwargs["base_path_to_share_folder"]
-        self.base_share_folder_name = kwargs["base_share_folder_name"]
-        self.host_list = kwargs["host_list"]
 
 
 class Tokens:
@@ -18,17 +11,11 @@ class Tokens:
         self.token_type = kwargs["token_type"]
 
 
-def parse_config_json():
-    with open('config.json', 'r', encoding='utf-8') as file:
-        return Config(json.load(file))
-
-
 def validate_path():
-    config = parse_config_json()
-    if config.base_path_to_share_folder:
-        return os.path.join(config.base_path_to_share_folder, config.base_share_folder_name)
+    if base_local_path_to_share_folder:
+        return os.path.join(base_local_path_to_share_folder, base_share_folder_name)
     else:
-        return os.path.join(config.base_path_to_share_folder, config.base_share_folder_name)  # TODO Что то придумать
+        return os.path.join(base_local_path_to_share_folder, base_share_folder_name)  # TODO Что то придумать
 
 
 def check_or_create_share_folder(directory_path: str = None):
@@ -79,7 +66,7 @@ def fetch_hosts():
     TODO: на самом деле это какой то лютый костыль. Лучше будет написать отдельную прогу, которая будет сканить сеть и добавлять новые узлы в бд (прога будет чисто для сисадмина)
     :return:
     """
-    for i in parse_config_json().host_list:
+    for i in host_list:
         check_or_create_share_folder(os.path.join(i, "/public/.sharespace"))
 
 
