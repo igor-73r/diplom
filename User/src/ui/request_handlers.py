@@ -24,14 +24,14 @@ def get_current_user():
     return response.json()
 
 
-def upload_file(file):
+def upload_file(file, user_id):
     file = DataProcessing(path=file)
     body = {
         "name": os.path.basename(file.file),
         "hash_func": file.hash_func,
         "size": file.file_size,
         "chunk_quantity": file.chunk_size,
-        "user_owner": 1,
+        "user_owner": user_id,
     }
     response = requests.post(f"{data_host}/add_full_file",
                              json=body)

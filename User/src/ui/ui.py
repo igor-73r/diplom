@@ -258,7 +258,7 @@ class ShareSpace(QMainWindow):
         if files:
             for file_path in files:
                 try:
-                    upload_file(file_path)
+                    upload_file(file_path, self.user["id"])
                     self.load_existing_files()
                 except Exception as e:
                     raise e
@@ -272,7 +272,7 @@ class ShareSpace(QMainWindow):
             file_path = url.toLocalFile()
             if os.path.isfile(file_path):
                 try:
-                    upload_file(file_path)
+                    upload_file(file_path, self.user["id"])
                     self.load_existing_files()
                 except Exception as e:
                     raise e
