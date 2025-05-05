@@ -65,7 +65,7 @@ class DataProcessing(Data):
         with open(self.file, 'rb') as f:
             for i, node in enumerate(nodes):
                 # TODO Относительный размер чанков сделал, осталось настроить пути, чтоб все нормально летело
-                temp_chunk_size = int(self.file_size * node["part"])
+                temp_chunk_size = int(self.file_size * node["part"]) + 10
                 chunk_data = f.read(temp_chunk_size)
                 body = {
                     "name": str(uuid.uuid4()),

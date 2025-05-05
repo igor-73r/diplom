@@ -55,7 +55,8 @@ def download_file(file: DataProcessing, download_dir: str):
         with open(chunk_path, "wb+") as f:
             f.write(requests.get(f"{data_host}/download_chunk/{chunk['id']}").content)
     try:
-        file.merge_files(chunks_dir="D:\\Study\\diplom\\src\\ui\\.temp", output_file=os.path.join(download_dir, file.file))
+        file.merge_files(chunks_dir=os.path.join(os.getcwd(), ".temp"),
+                         output_file=os.path.join(download_dir, file.file))
         os.rmdir(".temp")
     except Exception as e:
         import shutil
