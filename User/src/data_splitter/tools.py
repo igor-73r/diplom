@@ -2,7 +2,16 @@ import ctypes
 import os
 
 from User.src.config import base_net_path_to_share_folder, base_share_folder_name
-from request_handlers import get_all_nodes
+from .request_handlers import get_all_nodes
+import platform    # For getting the operating system name
+import subprocess  # For executing a shell command
+from socket import gethostname
+
+
+def ping(host):
+    param = '-n' if platform.system().lower() == 'windows' else '-c'
+    command = ['ping', param, '1', host]
+    return subprocess.call(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
 
 def get_free_space(network_path):
@@ -16,7 +25,6 @@ def get_free_space(network_path):
         ctypes.pointer(free_bytes),
     )
 
-    # --- 2. Считаем размер папки рекурсивно ---
     def get_folder_size(folder):
         total_size = 0
         for dirpath, _, filenames in os.walk(folder):
@@ -33,8 +41,13 @@ def get_free_space(network_path):
     return free_bytes.value, folder_size
 
 
+def get_available_nodes():
+    nodes = list(filter(lambda x: x["pc_name"] == gethostname() or ping(x["pc_name"]), get_all_nodes()))
+    return nodes
+
+
 def get_all_nodes_space_info():
-    nodes = get_all_nodes()
+    nodes = get_available_nodes()
     for i in nodes:
         i["free_space"], i["share_space_taken"] = get_free_space(f"//{i['pc_name']}{base_net_path_to_share_folder}/{base_share_folder_name}")
     return nodes
@@ -50,3 +63,4 @@ def calculate_nodes_percentage_of_total_space():
 
 if __name__ == '__main__':
     print(calculate_nodes_percentage_of_total_space())
+    # get_available_nodes()

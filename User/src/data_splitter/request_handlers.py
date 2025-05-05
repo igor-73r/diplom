@@ -12,6 +12,7 @@ from User.src.config import auth_host, data_host, base_net_path_to_share_folder,
 def upload_chunk():
     pass
 
+
 def get_all_nodes() -> dict | None:
     response = requests.get(f"{data_host}/get_nodes")
     if response.status_code == 200:

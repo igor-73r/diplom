@@ -10,7 +10,7 @@ from sqlalchemy import delete
 from Server.src.database import get_async_session
 from .schemas import FullFile, AddChunk, FullFileResponse, GetNode, CreateNode
 import os
-
+from Server.src.config import base_net_path_to_share_folder, base_share_folder_name
 
 db_dependency = Annotated[AsyncSession, Depends(get_async_session)]
 
@@ -90,6 +90,10 @@ fake_users_dirs = {
     "4": "F:\\.sharespace",
 }
 
+
+def buils_chunk_path(name):
+    return f"//{name}{base_net_path_to_share_folder}/{base_share_folder_name}"
+
 @router.post('/upload_chunk', status_code=status.HTTP_201_CREATED)
 async def upload_chunk(db: db_dependency,
                        file: UploadFile,
@@ -97,11 +101,11 @@ async def upload_chunk(db: db_dependency,
     """
     Тут должна быть попытка закинуть файл пользователю держателю, и если все успешно, тогда добавляем в бд
     """
-    from tools import get_chunks_dirs
-    get_chunks_dirs
-    user_dir = os.path.join(fake_users_dirs[f"{chunk_data.user_holder_id}"], f"{chunk_data.name}.bin")
+
+    node = await db.get(Node, chunk_data.folder_holder_id)
+    user_dir = os.path.join(buils_chunk_path(node.pc_name), f"{chunk_data.name}.bin")
     try:
-        with open(user_dir, 'wb+') as f:
+        with open(user_dir, 'wb') as f:
             f.write(file.file.read())
             f.close()
     except Exception as e:
@@ -110,7 +114,7 @@ async def upload_chunk(db: db_dependency,
     db_chunk = Chunks(
         name=chunk_data.name,
         chunk_ordinal_number=chunk_data.chunk_ordinal_number,
-        user_holder_id=chunk_data.user_holder_id,
+        folder_holder_id=chunk_data.folder_holder_id,
         full_data_id=chunk_data.full_data_id,
         is_copy=chunk_data.is_copy,
     )
@@ -141,8 +145,11 @@ async def download_chunk(db: db_dependency, chunk_id: int):
     :param chunk_id:
     :return:
     """
+
     chunk = await db.get(Chunks, chunk_id)
-    chunk_file = os.path.join(fake_users_dirs[f"{chunk.user_holder_id}"], f"{chunk.name}.bin")
+    node = await db.get(Node, chunk.folder_holder_id)
+
+    chunk_file = os.path.join(buils_chunk_path(node.pc_name), f"{chunk.name}.bin")
     return FileResponse(
         path=chunk_file,
         filename=chunk.name,  # Имя файла для скачивания
@@ -156,8 +163,8 @@ async def delete_file(db: db_dependency, parent_file_id: int):
     parent = await db.get(FullData, parent_file_id)
     await db.execute(delete(Chunks).where(Chunks.full_data_id == parent_file_id))
     for chunk_data in chunks.scalars().all():
-        print(chunk_data)
-        user_dir = os.path.join(fake_users_dirs[f"{chunk_data.user_holder_id}"], f"{chunk_data.name}.bin")
+        node = await db.get(Node, chunk_data.folder_holder_id)
+        user_dir = os.path.join(buils_chunk_path(node.pc_name), f"{chunk_data.name}.bin")
         try:
             os.remove(user_dir)
         except Exception as e:

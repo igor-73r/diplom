@@ -66,7 +66,7 @@ class FullFileResponse(BaseModel):
 class AddChunk(BaseModel):
     name: str
     chunk_ordinal_number: int
-    user_holder_id: int
+    folder_holder_id: int
     full_data_id: int
     is_copy:  bool
 

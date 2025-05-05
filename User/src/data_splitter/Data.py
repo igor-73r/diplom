@@ -2,7 +2,7 @@ import hashlib
 import os
 import glob
 import re
-from .request_handlers import get_all_nodes
+# from .request_handlers import get_all_nodes
 from .tools import calculate_nodes_percentage_of_total_space
 from User.src.config import data_host
 
@@ -64,8 +64,8 @@ class DataProcessing(Data):
 
         with open(self.file, 'rb') as f:
             for i, node in enumerate(nodes):
-                # TODO Относительный размер чанков сделал, осталось настроить пути, чтоб все нормально летело и должна быть гойда
-                temp_chunk_size = self.file_size * node["part"]
+                # TODO Относительный размер чанков сделал, осталось настроить пути, чтоб все нормально летело
+                temp_chunk_size = int(self.file_size * node["part"])
                 chunk_data = f.read(temp_chunk_size)
                 body = {
                     "name": str(uuid.uuid4()),
@@ -75,9 +75,10 @@ class DataProcessing(Data):
                     "is_copy": False,
                 }
                 response = requests.post(f"{data_host}/upload_chunk?name={body['name']}"
-                                         f"&chunk_ordinal_number={body['chunk_ordinal_number']}&user_holder_id={body['user_holder_id']}"
+                                         f"&chunk_ordinal_number={body['chunk_ordinal_number']}&folder_holder_id={body['folder_holder_id']}"
                                          f"&full_data_id={body['full_data_id']}&is_copy={body['is_copy']}",
                                          files={"file": chunk_data})
+                print(response.json())
 
 
     def merge_files(self, chunks_dir, output_file):
