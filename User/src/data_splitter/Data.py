@@ -61,7 +61,7 @@ class DataProcessing(Data):
 
 
         nodes = calculate_nodes_percentage_of_total_space()
-
+        flag = False
         with open(self.file, 'rb') as f:
             for i, node in enumerate(nodes):
                 # TODO Относительный размер чанков сделал, осталось настроить пути, чтоб все нормально летело
@@ -78,7 +78,11 @@ class DataProcessing(Data):
                                          f"&chunk_ordinal_number={body['chunk_ordinal_number']}&folder_holder_id={body['folder_holder_id']}"
                                          f"&full_data_id={body['full_data_id']}&is_copy={body['is_copy']}",
                                          files={"file": chunk_data})
-                print(response.json())
+                if response.status_code == 201:
+                    flag = True
+                else:
+                    return None
+        return flag
 
 
     def merge_files(self, chunks_dir, output_file):

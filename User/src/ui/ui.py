@@ -4,7 +4,7 @@ import os
 import requests
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QListWidget, QListWidgetItem,
                              QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel,
-                             QFileDialog, QLineEdit, QMessageBox, QDialog)
+                             QFileDialog, QLineEdit, QMessageBox, QDialog, QTabWidget, QFrame)
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont, QFontDatabase, QColor
 
@@ -14,6 +14,7 @@ from request_handlers import *
 import json
 from PyQt6.QtCore import pyqtSignal
 from tools import check_or_create_share_folder
+
 
 class LoginWindow(QDialog):
     def __init__(self, parent=None):
@@ -104,6 +105,224 @@ class ShareSpace(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
+
+        # Создаем виджет вкладок
+        self.tab_widget = QTabWidget()
+        self.tab_widget.tabBarClicked.connect(self.on_tab_changed)
+        layout.addWidget(self.tab_widget)
+
+        self.main_tab = QWidget()
+        self.second_tab = QWidget()
+        self.auth_tab = QWidget()
+        self.settings_tab = QWidget()
+        self.setup_main_tab()
+        self.setup_second_tab()
+        self.setup_auth_tab()
+        self.setup_settings_tab()
+
+        # Первая вкладка (основная)
+        if self.user:
+            self.tab_widget.addTab(self.main_tab, "Файлы")
+            self.tab_widget.addTab(self.second_tab, "Информация о системе")
+            self.tab_widget.addTab(self.settings_tab, "Настройки")
+        else:
+            self.tab_widget.addTab(self.main_tab, "Файлы")
+            self.tab_widget.addTab(self.auth_tab, "Авторизация")
+
+    def setup_settings_tab(self):
+        pass
+
+    def setup_auth_tab(self):
+        # Основной layout
+        main_layout = QHBoxLayout(self.settings_tab)
+        main_layout.setSpacing(30)
+        main_layout.setContentsMargins(50, 20, 50, 20)
+
+        # Форма входа
+        login_frame = QFrame()
+        login_frame.setFrameShape(QFrame.Shape.StyledPanel)
+        login_layout = QVBoxLayout(login_frame)
+        login_layout.setContentsMargins(20, 20, 20, 20)
+        login_layout.setSpacing(15)
+
+        login_title = QLabel("Вход в систему")
+        login_title.setStyleSheet("font-size: 18px; font-weight: bold;")
+
+        self.login_email = QLineEdit()
+        self.login_email.setPlaceholderText("Email")
+
+        self.login_password = QLineEdit()
+        self.login_password.setPlaceholderText("Пароль")
+        self.login_password.setEchoMode(QLineEdit.EchoMode.Password)
+
+        self.login_btn = QPushButton("Войти")
+        self.login_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #4CAF50;
+                        color: white;
+                        border: none;
+                        padding: 10px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover {
+                        background-color: #45a049;
+                    }
+                """)
+
+        login_layout.addWidget(login_title)
+        login_layout.addWidget(QLabel("Email:"))
+        login_layout.addWidget(self.login_email)
+        login_layout.addWidget(QLabel("Пароль:"))
+        login_layout.addWidget(self.login_password)
+        login_layout.addWidget(self.login_btn)
+        login_layout.addStretch()
+
+        # Форма регистрации
+        register_frame = QFrame()
+        register_frame.setFrameShape(QFrame.Shape.StyledPanel)
+        register_layout = QVBoxLayout(register_frame)
+        register_layout.setContentsMargins(20, 20, 20, 20)
+        register_layout.setSpacing(15)
+
+        register_title = QLabel("Регистрация")
+        register_title.setStyleSheet("font-size: 18px; font-weight: bold;")
+
+        self.register_email = QLineEdit()
+        self.register_email.setPlaceholderText("Email")
+
+        self.register_password = QLineEdit()
+        self.register_password.setPlaceholderText("Пароль")
+        self.register_password.setEchoMode(QLineEdit.EchoMode.Password)
+
+        self.register_confirm_password = QLineEdit()
+        self.register_confirm_password.setPlaceholderText("Повторите пароль")
+        self.register_confirm_password.setEchoMode(QLineEdit.EchoMode.Password)
+
+        self.register_btn = QPushButton("Зарегистрироваться")
+        self.register_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #2196F3;
+                        color: white;
+                        border: none;
+                        padding: 10px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover {
+                        background-color: #0b7dda;
+                    }
+                """)
+
+        register_layout.addWidget(register_title)
+        register_layout.addWidget(QLabel("Email:"))
+        register_layout.addWidget(self.register_email)
+        register_layout.addWidget(QLabel("Пароль:"))
+        register_layout.addWidget(self.register_password)
+        register_layout.addWidget(QLabel("Повторите пароль:"))
+        register_layout.addWidget(self.register_confirm_password)
+        register_layout.addWidget(self.register_btn)
+        register_layout.addStretch()
+
+        # Добавляем обе формы в основной layout
+        main_layout.addWidget(login_frame)
+        main_layout.addWidget(register_frame)
+
+        # Установка минимальных размеров для форм
+        login_frame.setMinimumWidth(300)
+        register_frame.setMinimumWidth(300)
+
+    def on_tab_changed(self, index):
+        """Обновляет содержимое вкладки при переключении"""
+        if index == 0:  # Вкладка "Файлы"
+            pass
+        elif index == 1:  # Вкладка "Информация о системе"
+            if hasattr(self.second_tab, 'layout'):
+                QWidget().setLayout(self.second_tab.layout())
+            self.setup_second_tab()
+
+
+    def setup_second_tab(self):
+        from User.src.data_splitter.tools import get_all_nodes_space_info
+
+        layout = QVBoxLayout(self.second_tab)
+
+        # Получаем информацию о всех узлах
+        nodes_info = get_all_nodes_space_info()
+
+        # Вычисляем общие параметры системы
+        total_free = sum(node['free_space'] for node in nodes_info)
+        total_share = sum(node['share_space_taken'] for node in nodes_info)
+
+        # Создаем виджет для отображения общей информации
+        summary_widget = QWidget()
+        summary_widget.setStyleSheet("""
+            QWidget {
+                background-color: #424242;
+                padding: 10px;
+                border-radius: 5px;
+                margin-bottom: 10px;
+            }
+            QLabel {
+                font-weight: bold;
+            }
+        """)
+
+        summary_layout = QVBoxLayout(summary_widget)
+
+        def beautiful_size(size: int):
+            if size / (1024 ** 2) >= 1024:
+                return f"{size / (1024 ** 3):.2f} GB"
+            return f"{size / (1024 ** 2):.2f} MB"
+
+        # Добавляем метки с общей информацией
+        # total_free_label = QLabel(f"Общее свободное пространство: {total_free / (1024 ** 2):.2f} MB")
+        # total_share_label = QLabel(f"Общее занятое пространство в ShareSpace: {total_share / (1024 ** 2):.2f} MB")
+        total_free_label = QLabel(f"Общее свободное пространство: {beautiful_size(total_free)}")
+        total_share_label = QLabel(f"Общее занятое пространство в ShareSpace: {beautiful_size(total_share)}")
+
+        summary_layout.addWidget(total_free_label)
+        summary_layout.addWidget(total_share_label)
+        layout.addWidget(summary_widget)
+
+        # Создаем список для отображения информации о каждом узле
+        self.nodes_list = QListWidget()
+        self.nodes_list.setStyleSheet("""
+            QListWidget {
+                padding: 5px;
+            }
+            QListWidget::item {
+                margin: 2px 0;
+                background-color: #595959;
+                border-radius: 3px;
+            }
+        """)
+
+        # Добавляем информацию о каждом узле в список
+        for node in nodes_info:
+            item = QListWidgetItem()
+            self.nodes_list.addItem(item)
+
+            widget = QWidget()
+            node_layout = QHBoxLayout(widget)
+
+            # Информация об узле
+            node_info = QLabel(
+                f"{node['pc_name']} (ID: {node['id']}): "
+                f"Свободно: {beautiful_size(node['free_space'])}, "
+                f"Занято в ShareSpace: {beautiful_size(node['share_space_taken'])}"
+            )
+
+            node_layout.addWidget(node_info)
+            widget.setLayout(node_layout)
+
+            item.setSizeHint(widget.sizeHint())
+            self.nodes_list.setItemWidget(item, widget)
+
+        layout.addWidget(self.nodes_list)
+
+
+
+    def setup_main_tab(self):
+        layout = QVBoxLayout(self.main_tab)
 
         header = QHBoxLayout()
         self.title_label = QLabel("Перенесите файл, или нажмите на кнопку ниже:")

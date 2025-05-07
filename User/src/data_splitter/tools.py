@@ -2,7 +2,7 @@ import ctypes
 import os
 
 from User.src.config import base_net_path_to_share_folder, base_share_folder_name
-from .request_handlers import get_all_nodes
+from User.src.data_splitter.request_handlers import get_all_nodes
 import platform    # For getting the operating system name
 import subprocess  # For executing a shell command
 from socket import gethostname
@@ -10,9 +10,12 @@ from socket import gethostname
 
 def ping(host):
     param = '-n' if platform.system().lower() == 'windows' else '-c'
-    command = ['ping', param, '1', host]
+    command = ['ping', param, '2', host]
     return subprocess.call(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
+
+def ping_two(host):
+    return os.path.isdir(f"//{host}/Public")
 
 def get_free_space(network_path):
     """Получает свободное место на сетевом диске в байтах."""
@@ -42,7 +45,7 @@ def get_free_space(network_path):
 
 
 def get_available_nodes():
-    nodes = list(filter(lambda x: x["pc_name"] == gethostname() or ping(x["pc_name"]), get_all_nodes()))
+    nodes = list(filter(lambda x: x["pc_name"] == gethostname() or ping_two(x["pc_name"]), get_all_nodes()))
     return nodes
 
 
@@ -62,5 +65,5 @@ def calculate_nodes_percentage_of_total_space():
 
 
 if __name__ == '__main__':
-    print(calculate_nodes_percentage_of_total_space())
+    print(ping_two("HOME-MAIN"))
     # get_available_nodes()
