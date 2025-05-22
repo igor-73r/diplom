@@ -96,8 +96,23 @@ def create_node(pc_name: str) -> Response:
     response = requests.post(f"{data_host}/add_node", json=body)
     return response
 
+
 def get_node(node: str) -> Response:
     response = requests.get(f"{data_host}/get_node/{node}")
+    return response
+
+
+def update_email(email: str) -> Response:
+    body = {"email": email}
+    response = requests.put(f"{auth_host}/update_email", json=body, headers=header_builder())
+    return response
+
+
+def update_password(old_pass: str, new_pass: str, repeat_new_pass: str) -> Response:
+    body = {"previous_password": old_pass,
+            "new_password": new_pass,
+            "repeat_new_password": repeat_new_pass}
+    response = requests.put(f"{auth_host}/update_password", json=body, headers=header_builder())
     return response
 
 

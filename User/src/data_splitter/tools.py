@@ -10,7 +10,7 @@ from socket import gethostname
 
 def ping(host):
     param = '-n' if platform.system().lower() == 'windows' else '-c'
-    command = ['ping', param, '2', host]
+    command = ['ping', param, '1', host]
     return subprocess.call(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
 

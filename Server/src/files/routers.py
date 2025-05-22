@@ -83,14 +83,6 @@ async def get_files_by_user_id(db: db_dependency, user_id: int):
         raise e
 
 
-fake_users_dirs = {
-    "1": "C:\\.sharespace",
-    "2": "D:\\.sharespace",
-    "3": "E:\\.sharespace",
-    "4": "F:\\.sharespace",
-}
-
-
 def buils_chunk_path(name):
     return f"//{name}{base_net_path_to_share_folder}/{base_share_folder_name}"
 

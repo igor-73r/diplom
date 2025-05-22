@@ -13,65 +13,70 @@ from User.src.config import font_path as fp, download_icon, delete_icon
 from request_handlers import *
 import json
 from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt
 from tools import check_or_create_share_folder
 
 
-class LoginWindow(QDialog):
+class ChangePasswordDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.parent_window = parent
-        self.setWindowTitle("Авторизация")
-        self.setFixedSize(300, 200)
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setWindowTitle("Изменение пароля")
+        self.setFixedWidth(300)
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
 
-        # Email поле
-        self.email_label = QLabel("Email:")
-        self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("Введите ваш email")
+        # Поля ввода
+        self.old_password = QLineEdit()
+        self.old_password.setPlaceholderText("Старый пароль")
+        self.old_password.setEchoMode(QLineEdit.EchoMode.Password)
 
-        # Пароль поле
-        self.password_label = QLabel("Пароль:")
-        self.password_input = QLineEdit()
-        self.password_input.setPlaceholderText("Введите пароль")
-        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.new_password = QLineEdit()
+        self.new_password.setPlaceholderText("Новый пароль")
+        self.new_password.setEchoMode(QLineEdit.EchoMode.Password)
 
-        # Кнопки входаи регистрации
-        buttons = QHBoxLayout(self)
-        self.login_button = QPushButton("Войти")
-        self.login_button.clicked.connect(self.handle_login)
-        self.reg_button = QPushButton("Регистрация")
-        self.reg_button.clicked.connect(self.handle_reg)
-        buttons.addWidget(self.login_button)
-        buttons.addWidget(self.reg_button)
+        self.confirm_password = QLineEdit()
+        self.confirm_password.setPlaceholderText("Повторите новый пароль")
+        self.confirm_password.setEchoMode(QLineEdit.EchoMode.Password)
+
+        # Кнопка изменения
+        self.change_btn = QPushButton("Изменить")
+        self.change_btn.clicked.connect(self.change_password)
 
         # Добавляем элементы
-        layout.addWidget(self.email_label)
-        layout.addWidget(self.email_input)
-        layout.addWidget(self.password_label)
-        layout.addWidget(self.password_input)
-        layout.addLayout(buttons)
+        layout.addWidget(QLabel("Старый пароль:"))
+        layout.addWidget(self.old_password)
+        layout.addWidget(QLabel("Новый пароль:"))
+        layout.addWidget(self.new_password)
+        layout.addWidget(QLabel("Повторите пароль:"))
+        layout.addWidget(self.confirm_password)
+        layout.addWidget(self.change_btn)
 
+    def change_password(self):
+        old_pass = self.old_password.text()
+        new_pass = self.new_password.text()
+        confirm_pass = self.confirm_password.text()
+        from request_handlers import update_password
 
-    def handle_reg(self):
-        from request_handlers import register
-        email = self.email_input.text()
-        password = self.password_input.text()
-        response = register(email, password)
-        if response.status_code == 201:
-            response = auth(email, password)
-        if response.status_code == 200:
-            self.accept()  # Закрываем окно после успешного входа
+        if not old_pass or not new_pass or not confirm_pass:
+            QMessageBox.warning(self, "Ошибка", "Все поля должны быть заполнены")
+            return
 
+        if new_pass != confirm_pass:
+            QMessageBox.warning(self, "Ошибка", "Пароли не совпадают")
+            return
 
-    def handle_login(self):
-        from request_handlers import auth
-        email = self.email_input.text()
-        password = self.password_input.text()
-        response = auth(email, password)
-        if response.status_code == 200:
-            self.accept()  # Закрываем окно после успешного входа
-
+        if update_password(old_pass, new_pass, confirm_pass).status_code == 200:
+            # Здесь должна быть логика изменения пароля
+            QMessageBox.information(self, "Успех", "Пароль успешно изменен")
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Ошибка", "Что-то пошло не так")
+        self.close()
 
 class ShareSpace(QMainWindow):
     file_name_len: int = 50
@@ -118,23 +123,99 @@ class ShareSpace(QMainWindow):
         self.setup_main_tab()
         self.setup_second_tab()
         self.setup_auth_tab()
-        self.setup_settings_tab()
 
         # Первая вкладка (основная)
         if self.user:
+            self.setup_settings_tab()
             self.tab_widget.addTab(self.main_tab, "Файлы")
             self.tab_widget.addTab(self.second_tab, "Информация о системе")
             self.tab_widget.addTab(self.settings_tab, "Настройки")
         else:
-            self.tab_widget.addTab(self.main_tab, "Файлы")
+            # self.tab_widget.addTab(self.main_tab, "Файлы")
             self.tab_widget.addTab(self.auth_tab, "Авторизация")
 
     def setup_settings_tab(self):
-        pass
+        main_layout = QVBoxLayout(self.settings_tab)
+        # main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.setContentsMargins(20, 50, 20, 50)
+        main_layout.setSpacing(30)
+
+        # Блок изменения email
+        email_layout = QHBoxLayout()
+        email_label = QLabel("Email:")
+
+        self.email_input = QLineEdit()
+        self.email_input.setText(self.user.get('email'))
+
+        self.apply_email_btn = QPushButton("Применить")
+        self.apply_email_btn.clicked.connect(self.update_email)
+        self.apply_email_btn.setFixedWidth(180)
+
+        email_layout.addWidget(email_label)
+        email_layout.addWidget(self.email_input)
+        email_layout.addWidget(self.apply_email_btn)
+
+        main_layout.addLayout(email_layout)
+
+        # Блок добавления узла (только для админа)
+        if self.user.get('is_admin', False):
+            node_layout = QHBoxLayout()
+            node_label = QLabel("Добавление узла:")
+
+            self.node_input = QLineEdit()
+            self.node_input.setPlaceholderText("Введите имя узла")
+
+            self.add_node_btn = QPushButton("Добавить")
+            self.add_node_btn.clicked.connect(self.add_node)
+            self.add_node_btn.setFixedWidth(180)
+
+            node_layout.addWidget(node_label)
+            node_layout.addWidget(self.node_input)
+            node_layout.addWidget(self.add_node_btn)
+
+            main_layout.addLayout(node_layout)
+
+        # Кнопка изменения пароля
+        self.change_password_btn = QPushButton("Изменить пароль")
+        self.change_password_btn.clicked.connect(self.show_change_password_dialog)
+        main_layout.addWidget(self.change_password_btn)
+
+        # Кнопка выхода
+        self.logout_btn = QPushButton("Выход")
+        self.logout_btn.clicked.connect(self.auth_exit)
+        main_layout.addWidget(self.logout_btn)
+
+        # Добавляем растягивающийся элемент для выравнивания вверху
+        main_layout.addStretch()
+
+    def update_email(self):
+        new_email = self.email_input.text()
+        from request_handlers import update_email
+        if update_email(new_email).status_code == 200:
+            QMessageBox.information(self, "Успех", f"Email изменен на: {new_email}")
+        else:
+            QMessageBox.information(self, "Ошибка", f"Указан некорректный формат")
+
+    def add_node(self):
+        node_name = self.node_input.text()
+        if node_name:
+            from request_handlers import create_node
+            if create_node(node_name).status_code == 201:
+                QMessageBox.information(self, "Успех", f"Узел '{node_name}' добавлен")
+            else:
+                QMessageBox.information(self, "Ошибка", f"Такой узел уже существует")
+            self.node_input.clear()
+        else:
+            QMessageBox.warning(self, "Ошибка", "Введите имя узла")
+
+    def show_change_password_dialog(self):
+        dialog = ChangePasswordDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.auth_exit()
 
     def setup_auth_tab(self):
         # Основной layout
-        main_layout = QHBoxLayout(self.settings_tab)
+        main_layout = QHBoxLayout(self.auth_tab)
         main_layout.setSpacing(30)
         main_layout.setContentsMargins(50, 20, 50, 20)
 
@@ -222,6 +303,32 @@ class ShareSpace(QMainWindow):
         register_layout.addWidget(self.register_btn)
         register_layout.addStretch()
 
+        def handle_reg():
+            from request_handlers import register
+            email = self.register_email.text()
+            password = self.register_password.text()
+            if password == self.register_confirm_password.text():
+                response = register(email, password)
+                if response.status_code == 201:
+                    response = auth(email, password)
+                if response.status_code == 200:
+                    self.fetch_window()
+                else:
+                    QMessageBox.warning(self, "Ошибка", f"Такой пользователь уже существует")
+
+        def handle_login():
+            from request_handlers import auth
+            email = self.login_email.text()
+            password = self.login_password.text()
+            response = auth(email, password)
+            if response.status_code == 200:
+                self.fetch_window()
+            else:
+                QMessageBox.warning(self, "Ошибка", f"Неверные данные пользователя")
+
+        self.login_btn.clicked.connect(handle_login)
+        self.register_btn.clicked.connect(handle_reg)
+
         # Добавляем обе формы в основной layout
         main_layout.addWidget(login_frame)
         main_layout.addWidget(register_frame)
@@ -229,6 +336,8 @@ class ShareSpace(QMainWindow):
         # Установка минимальных размеров для форм
         login_frame.setMinimumWidth(300)
         register_frame.setMinimumWidth(300)
+
+
 
     def on_tab_changed(self, index):
         """Обновляет содержимое вкладки при переключении"""
@@ -325,18 +434,13 @@ class ShareSpace(QMainWindow):
         layout = QVBoxLayout(self.main_tab)
 
         header = QHBoxLayout()
-        self.title_label = QLabel("Перенесите файл, или нажмите на кнопку ниже:")
-        self.auth_button = QPushButton()
-        if self.user:
-            self.auth_button.setText("Выход")
-            self.auth_button.clicked.connect(self.auth_exit)
-        else:
-            self.auth_button.setText("Авторизация")
-            self.auth_button.clicked.connect(self.show_login_window)
-        self.auth_button.setFixedWidth(150)
-        header.addWidget(self.auth_button)
-        header.addStretch()
+        self.title_label = QLabel("Перенесите файл, или нажмите на кнопку")
+        self.add_button = QPushButton("Загрузить файл")
+        self.add_button.clicked.connect(self.add_files_dialog)
+        self.add_button.setFixedWidth(150)
         header.addWidget(self.title_label)
+        header.addStretch()
+        header.addWidget(self.add_button)
 
         layout.addLayout(header)
 
@@ -355,16 +459,6 @@ class ShareSpace(QMainWindow):
         """)
         layout.addWidget(self.file_list)
 
-        self.add_button = QPushButton("Add Files")
-        self.add_button.setStyleSheet("""
-            QPushButton {
-                padding: 8px;
-            }
-        """)
-        self.add_button.setFont(self.global_font)
-        self.add_button.clicked.connect(self.add_files_dialog)
-        layout.addWidget(self.add_button)
-
     def auth_exit(self):
         from tools import save_tokens
         save_tokens(tokens={"access_token": "", "refresh_token": "", "token_type": ""})
@@ -374,16 +468,12 @@ class ShareSpace(QMainWindow):
     def get_user():
         from request_handlers import get_current_user
         user = get_current_user()
+        # print(user)
         try:
             if user["detail"] == "UNAUTHORIZED":
                 return None
         except KeyError:
             return user
-
-    def show_login_window(self):
-        login_dialog = LoginWindow(self)  # self передается как parent
-        if login_dialog.exec() == QDialog.DialogCode.Accepted:
-            self.fetch_window()
 
     def load_existing_files(self):
         self.file_list.clear()

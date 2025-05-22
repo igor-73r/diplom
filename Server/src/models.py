@@ -26,6 +26,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(length=320), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(length=1024), nullable=False)
     auth_token: Mapped[str | None]
+    is_admin: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     full_data: Mapped[List["FullData"]] = relationship(back_populates="user")
 
@@ -63,7 +64,6 @@ class Chunks(Base):
     chunk_ordinal_number: Mapped[int] = mapped_column(nullable=False)
     folder_holder_id: Mapped[int] = mapped_column(ForeignKey("nodes.id"), nullable=False)
     full_data_id: Mapped[int] = mapped_column(ForeignKey("full_data.id"), nullable=False)
-    is_copy: Mapped[bool] = mapped_column(nullable=False)
 
     nodes: Mapped["Node"] = relationship(back_populates="chunks")
     full_data: Mapped["FullData"] = relationship(back_populates="chunks")

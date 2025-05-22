@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import exc
 from fastapi.exceptions import ResponseValidationError
 
-from .schemas import CreateUser, BaseUser, Token, UpdatePassword
+from .schemas import CreateUser, BaseUser, Token, UpdatePassword, UpdateEmail
 from .auth import (bcrypt_context, db_dependency, authenticate_user,
                    login_response, get_user_by_id, get_auth_token)
 from .auth_dependencies import BaseAuthDep, ExtAuthDep
@@ -101,3 +101,8 @@ async def update_password(db: db_dependency, user_id: BaseAuthDep, passwords: Up
         raise credentials_exception
 
 
+@router.put('/update_email', status_code=status.HTTP_200_OK)
+async def update_email(db: db_dependency, user_id: BaseAuthDep, email: UpdateEmail):
+    user = await db.get(User, user_id)
+    user.email = email.email
+    await db.commit()

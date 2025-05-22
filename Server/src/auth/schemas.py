@@ -9,6 +9,7 @@ class CreateUser(BaseModel):
 class BaseUser(BaseModel):
     id: int
     email: EmailStr
+    is_admin: bool
 
 
 class Token(BaseModel):
@@ -26,3 +27,7 @@ class UpdatePassword(BaseModel):
     previous_password: str
     new_password: str
     repeat_new_password: str
+
+
+class UpdateEmail(BaseModel):
+    email: EmailStr
