@@ -68,7 +68,6 @@ class AddChunk(BaseModel):
     chunk_ordinal_number: int
     folder_holder_id: int
     full_data_id: int
-    is_copy:  bool
 
 
 class AuthUser(BaseModel):

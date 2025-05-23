@@ -64,7 +64,6 @@ class DataProcessing(Data):
         flag = False
         with open(self.file, 'rb') as f:
             for i, node in enumerate(nodes):
-                # TODO Относительный размер чанков сделал, осталось настроить пути, чтоб все нормально летело
                 temp_chunk_size = int(self.file_size * node["part"]) + 10
                 chunk_data = f.read(temp_chunk_size)
                 body = {
@@ -72,11 +71,10 @@ class DataProcessing(Data):
                     "chunk_ordinal_number": i,
                     "folder_holder_id": node["id"],
                     "full_data_id": self.file_id,
-                    "is_copy": False,
                 }
                 response = requests.post(f"{data_host}/upload_chunk?name={body['name']}"
                                          f"&chunk_ordinal_number={body['chunk_ordinal_number']}&folder_holder_id={body['folder_holder_id']}"
-                                         f"&full_data_id={body['full_data_id']}&is_copy={body['is_copy']}",
+                                         f"&full_data_id={body['full_data_id']}",
                                          files={"file": chunk_data})
                 if response.status_code == 201:
                     flag = True
@@ -110,7 +108,7 @@ class DataProcessing(Data):
 
         if self.file_size:
             if self.file_size != total_size:
-                print("⚠️ Предупреждение: размеры не совпадают!")
+                print("размеры не совпадают")
 
         # Собираем файл
         with open(output_file, 'wb') as out_file:
@@ -126,10 +124,10 @@ class DataProcessing(Data):
             merged_hash = self.get_hash(output_file)
 
             if original_hash == merged_hash:
-                print("✅ Файл собран корректно!")
+                print("Файл собран корректно")
                 return True
             else:
-                print("❌ Ошибка: хеши не совпадают!")
+                print("Ошибка: хеши не совпадают")
                 return False
         else:
             print("\nФайл собран. Проверка по оригиналу невозможна.")

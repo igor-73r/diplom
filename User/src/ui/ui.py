@@ -78,6 +78,7 @@ class ChangePasswordDialog(QDialog):
             QMessageBox.warning(self, "Ошибка", "Что-то пошло не так")
         self.close()
 
+
 class ShareSpace(QMainWindow):
     file_name_len: int = 50
     global_font: QFont
@@ -337,8 +338,6 @@ class ShareSpace(QMainWindow):
         login_frame.setMinimumWidth(300)
         register_frame.setMinimumWidth(300)
 
-
-
     def on_tab_changed(self, index):
         """Обновляет содержимое вкладки при переключении"""
         if index == 0:  # Вкладка "Файлы"
@@ -347,7 +346,6 @@ class ShareSpace(QMainWindow):
             if hasattr(self.second_tab, 'layout'):
                 QWidget().setLayout(self.second_tab.layout())
             self.setup_second_tab()
-
 
     def setup_second_tab(self):
         from User.src.data_splitter.tools import get_all_nodes_space_info
@@ -427,8 +425,6 @@ class ShareSpace(QMainWindow):
             self.nodes_list.setItemWidget(item, widget)
 
         layout.addWidget(self.nodes_list)
-
-
 
     def setup_main_tab(self):
         layout = QVBoxLayout(self.main_tab)
@@ -556,22 +552,43 @@ class ShareSpace(QMainWindow):
 
     def delete_file(self, file: DataProcessing):
         from request_handlers import delete_file as df
-        df(file)
-        self.load_existing_files()
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Подтверждение")
+        msg_box.setText("Вы уверены, что хотите удалить файл?")
+        msg_box.setIcon(QMessageBox.Icon.Question)
+
+        msg_box.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+
+        reply = msg_box.exec()
+
+        if reply == QMessageBox.StandardButton.Yes:
+            df(file)
+            self.load_existing_files()
 
     def download_file(self, file: DataProcessing):
         from request_handlers import download_file as df
         down_dir = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
-        df(file, download_dir=down_dir)
+        f = df(file, download_dir=down_dir)
+        print(f)
+        if f is True:
+            QMessageBox.information(self, "Успех", "Файл собран корректно")
+        else:
+            QMessageBox.warning(self, "Ошибка", "При сборке файла произошла ошибка")
 
     def add_files_dialog(self):
         files, _ = QFileDialog.getOpenFileNames(self, "Select Files")
         if files:
             for file_path in files:
                 try:
-                    upload_file(file_path, self.user["id"])
-                    self.load_existing_files()
+                    response = upload_file(file_path, self.user["id"])
+                    if type(response) == bool and response is True:
+                        self.load_existing_files()
+                        QMessageBox.information(self, "Успех", "Файл загружен корректно")
                 except Exception as e:
+                    QMessageBox.warning(self, "Ошибка", "Что то пошло не так")
                     raise e
 
     def dragEnterEvent(self, event: QDragEnterEvent):
@@ -583,9 +600,12 @@ class ShareSpace(QMainWindow):
             file_path = url.toLocalFile()
             if os.path.isfile(file_path):
                 try:
-                    upload_file(file_path, self.user["id"])
-                    self.load_existing_files()
+                    response = upload_file(file_path, self.user["id"])
+                    if type(response) == bool and response is True:
+                        self.load_existing_files()
+                        QMessageBox.information(self, "Успех", "Файл загружен корректно")
                 except Exception as e:
+                    QMessageBox.warning(self, "Ошибка", "Что то пошло не так")
                     raise e
         event.acceptProposedAction()
 

@@ -38,8 +38,9 @@ def upload_file(file, user_id):
 
     file.file_id = response.json()["id"]
     if response.status_code == 201:
-        file.split_file()
-
+        return file.split_file()
+    else:
+        return response
 
 def get_files_by_user_id(user_id: int):
     response = requests.get(f"{data_host}/get_files/{user_id}")
@@ -47,20 +48,23 @@ def get_files_by_user_id(user_id: int):
     return response.json()
 
 
-def download_file(file: DataProcessing, download_dir: str):
+def download_file(file: DataProcessing, download_dir: str) -> bool:
     chunks = requests.get(f"{data_host}/get_chunks/{file.file_id}")
     os.mkdir(".temp")
+    import shutil
     for chunk in chunks.json():
         chunk_path = os.path.join(".temp", f"part_{chunk['chunk_ordinal_number']}.bin")
         with open(chunk_path, "wb+") as f:
             f.write(requests.get(f"{data_host}/download_chunk/{chunk['id']}").content)
     try:
-        file.merge_files(chunks_dir=os.path.join(os.getcwd(), ".temp"),
+        flag = file.merge_files(chunks_dir=os.path.join(os.getcwd(), ".temp"),
                          output_file=os.path.join(download_dir, file.file))
-        os.rmdir(".temp")
-    except Exception as e:
-        import shutil
         shutil.rmtree(".temp")
+    except Exception as e:
+        shutil.rmtree(".temp")
+        raise e
+    else:
+        return flag
 
 
 def delete_file(file: DataProcessing) -> Response:

@@ -108,7 +108,6 @@ async def upload_chunk(db: db_dependency,
         chunk_ordinal_number=chunk_data.chunk_ordinal_number,
         folder_holder_id=chunk_data.folder_holder_id,
         full_data_id=chunk_data.full_data_id,
-        is_copy=chunk_data.is_copy,
     )
     try:
         db.add(db_chunk)
