@@ -4,6 +4,8 @@ import os
 font_path = '../../static/fonts/NunitoSans.ttf' if platform.system() == "Windows" else "/Users/igor/Documents/UlSTU/diplom/static/fonts/NunitoSans.ttf"
 download_icon = "../../static/icons/download.svg"
 delete_icon = "../../static/icons/delete.svg"
+restore_icon = "../../static/icons/restore.svg"
+move_to_bin_icon = "../../static/icons/move_to_bin.svg"
 
 tokens_dir = os.path.join(os.path.expanduser("~"), "tokens.json")
 

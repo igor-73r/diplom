@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import Annotated
 from fastapi import APIRouter, Depends, UploadFile
 from starlette import status
@@ -8,7 +9,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import delete
 
 from Server.src.database import get_async_session
-from .schemas import FullFile, AddChunk, FullFileResponse, GetNode, CreateNode
+from Server.src.files.schemas import FullFile, AddChunk, FullFileResponse, GetNode, CreateNode
 import os
 from Server.src.config import base_net_path_to_share_folder, base_share_folder_name
 
@@ -164,3 +165,18 @@ async def delete_file(db: db_dependency, parent_file_id: int):
     await db.commit()
     return "done"
 
+
+@router.put('/move_to_rec_bin/{parent_file_id}')
+async def move_to_rec_bin(db: db_dependency, parent_file_id: int):
+    parent = await db.get(FullData, parent_file_id)
+    parent.delete_time = int((datetime.now() + timedelta(days=1)).timestamp())
+    await db.commit()
+    return "done"
+
+
+@router.put('/restore_from_rec_bin/{parent_file_id}')
+async def move_to_rec_bin(db: db_dependency, parent_file_id: int):
+    parent = await db.get(FullData, parent_file_id)
+    parent.delete_time = None
+    await db.commit()
+    return "done"

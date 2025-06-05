@@ -40,6 +40,7 @@ class FullData(Base):
     size: Mapped[int] = mapped_column(nullable=False)
     chunk_quantity: Mapped[int] = mapped_column(nullable=False)
     user_owner: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    delete_time: Mapped[int] = mapped_column(nullable=True)  # тут будет timestamp удаления файла (если timestamp есть и он больше текущего времени, то файл в корзине, иначе удален)
 
     user: Mapped["User"] = relationship(back_populates="full_data")
     chunks: Mapped[List["Chunks"]] = relationship(back_populates="full_data")

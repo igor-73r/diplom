@@ -24,5 +24,5 @@ async def init_models():
 
 
 if __name__ == '__main__':
-    # asyncio.run(init_models())
+    asyncio.run(init_models())
     uvicorn.run("app:app")

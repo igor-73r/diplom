@@ -1,3 +1,4 @@
+import datetime
 import sys
 import os
 
@@ -8,7 +9,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QListWidget, QListWidget
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont, QFontDatabase, QColor
 
-from User.src.config import font_path as fp, download_icon, delete_icon
+from User.src.config import font_path as fp, download_icon, delete_icon, restore_icon, move_to_bin_icon
 
 from request_handlers import *
 import json
@@ -121,9 +122,11 @@ class ShareSpace(QMainWindow):
         self.second_tab = QWidget()
         self.auth_tab = QWidget()
         self.settings_tab = QWidget()
+        self.rec_bin_tab = QWidget()
         self.setup_main_tab()
         self.setup_second_tab()
         self.setup_auth_tab()
+        self.setup_rec_bin_tab()
 
         # Первая вкладка (основная)
         if self.user:
@@ -131,6 +134,7 @@ class ShareSpace(QMainWindow):
             self.tab_widget.addTab(self.main_tab, "Файлы")
             self.tab_widget.addTab(self.second_tab, "Информация о системе")
             self.tab_widget.addTab(self.settings_tab, "Настройки")
+            self.tab_widget.addTab(self.rec_bin_tab, "Корзина")
         else:
             # self.tab_widget.addTab(self.main_tab, "Файлы")
             self.tab_widget.addTab(self.auth_tab, "Авторизация")
@@ -455,6 +459,30 @@ class ShareSpace(QMainWindow):
         """)
         layout.addWidget(self.file_list)
 
+    def setup_rec_bin_tab(self):
+        layout = QVBoxLayout(self.rec_bin_tab)
+
+        header = QHBoxLayout()
+        self.title_label = QLabel("Корзина")
+        header.addWidget(self.title_label)
+
+        layout.addLayout(header)
+
+        self.file_in_rec_list = QListWidget()
+        self.file_in_rec_list.setStyleSheet("""
+            QListWidget {
+                padding: 10px;
+            }
+            QListWidget::item {
+                margin: 1 0;
+            }
+            //QListWidget::item:selected  {
+            //    background-color: #595E6D;
+            //    border-radius: 4px;
+            //}
+        """)
+        layout.addWidget(self.file_in_rec_list)
+
     def auth_exit(self):
         from tools import save_tokens
         save_tokens(tokens={"access_token": "", "refresh_token": "", "token_type": ""})
@@ -473,10 +501,14 @@ class ShareSpace(QMainWindow):
 
     def load_existing_files(self):
         self.file_list.clear()
+        self.file_in_rec_list.clear()
         if self.user:
             files = [DataProcessing(kwargs=f) for f in get_files_by_user_id(self.user["id"])]
             for file in files:
-                self.add_file_to_list(file)
+                if file.delete_time:
+                    self.add_file_to_list(file, in_bin=True)
+                else:
+                    self.add_file_to_list(file)
 
     def match_file_name_len(self, file_name: str) -> QLabel:
         label = QLabel(file_name[:self.file_name_len])
@@ -484,11 +516,18 @@ class ShareSpace(QMainWindow):
             label.setToolTip(file_name)
         return label
 
-    def add_file_to_list(self, file: DataProcessing):
+    def add_file_to_list(self, file: DataProcessing, in_bin=False):
+        if file.delete_time and file.delete_time < int(datetime.datetime.now().timestamp()):
+            self.delete_file(file)
+            return
+
         file_path = file.file
-        index = len(self.file_list) + 1
+
+        file_widget = self.file_in_rec_list if in_bin else self.file_list
+
+        index = len(file_widget) + 1
         item = QListWidgetItem()
-        self.file_list.addItem(item)
+        file_widget.addItem(item)
         widget = QWidget()
 
         even_color = QColor(87, 87, 87)
@@ -525,6 +564,42 @@ class ShareSpace(QMainWindow):
         """)
         delete_btn.clicked.connect(lambda _, f=file: self.delete_file(f))
 
+        restore_btn = QPushButton()
+        restore_btn.setIcon(QIcon(restore_icon))
+        restore_btn.setIconSize(QSize(17, 17))
+        restore_btn.setFixedWidth(50)
+        restore_btn.setStyleSheet("""
+            QPushButton {
+                height: 30px; 
+                border: none;
+                border-radius: 6px;
+                background: #57965C;
+                margin: 0 10px;
+            }
+            QPushButton:hover {
+                background: #1F704A;
+            }
+        """)
+        restore_btn.clicked.connect(lambda _, f=file: self.restore_file(f))
+
+        move_to_bin_btn = QPushButton()
+        move_to_bin_btn.setIcon(QIcon(move_to_bin_icon))
+        move_to_bin_btn.setIconSize(QSize(17, 17))
+        move_to_bin_btn.setFixedWidth(50)
+        move_to_bin_btn.setStyleSheet("""
+            QPushButton {
+                height: 30px; 
+                border: none;
+                border-radius: 6px;
+                background: #C94F4F;
+                margin: 0 10px;
+            }
+            QPushButton:hover {
+                background: #A22F2F;
+            }
+        """)
+        move_to_bin_btn.clicked.connect(lambda _, f=file: self.move_to_bin_file(f))
+
         download_btn = QPushButton()
         download_btn.setIcon(QIcon(download_icon))
         download_btn.setIconSize(QSize(30, 30))
@@ -543,12 +618,39 @@ class ShareSpace(QMainWindow):
         download_btn.clicked.connect(lambda _, f=file: self.download_file(f))
 
         layout.addWidget(label)
-        layout.addWidget(download_btn)
-        layout.addWidget(delete_btn)
+        if in_bin:
+            layout.addWidget(restore_btn)
+            layout.addWidget(delete_btn)
+        else:
+            layout.addWidget(download_btn)
+            layout.addWidget(move_to_bin_btn)
 
         widget.setLayout(layout)
         item.setSizeHint(widget.sizeHint())
-        self.file_list.setItemWidget(item, widget)
+        file_widget.setItemWidget(item, widget)
+
+    def restore_file(self, file: DataProcessing):
+        from request_handlers import restore_from_rec_bin as df
+        df(file)
+        self.load_existing_files()
+
+    def move_to_bin_file(self, file: DataProcessing):
+        from request_handlers import move_to_rec_bin as df
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Подтверждение")
+        msg_box.setText("Вы уверены, что хотите переместить файл в корзину? Файлы, которые перемещены в корзину, будут окончательно удалены через сутки.")
+        msg_box.setIcon(QMessageBox.Icon.Question)
+
+        msg_box.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+
+        reply = msg_box.exec()
+
+        if reply == QMessageBox.StandardButton.Yes:
+            df(file)
+            self.load_existing_files()
 
     def delete_file(self, file: DataProcessing):
         from request_handlers import delete_file as df
@@ -583,6 +685,9 @@ class ShareSpace(QMainWindow):
         if files:
             for file_path in files:
                 try:
+                    if os.path.getsize(file_path) == 0:
+                        QMessageBox.warning(self, "Внимание", "Файл, который вы пытаетесь загрузить, имеет размер 0 байт")
+                        return
                     response = upload_file(file_path, self.user["id"])
                     if type(response) == bool and response is True:
                         self.load_existing_files()
@@ -600,6 +705,9 @@ class ShareSpace(QMainWindow):
             file_path = url.toLocalFile()
             if os.path.isfile(file_path):
                 try:
+                    if os.path.getsize(file_path) == 0:
+                        QMessageBox.warning(self, "Внимание", "Файл, который вы пытаетесь загрузить, имеет размер 0 байт")
+                        return
                     response = upload_file(file_path, self.user["id"])
                     if type(response) == bool and response is True:
                         self.load_existing_files()

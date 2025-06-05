@@ -72,6 +72,16 @@ def delete_file(file: DataProcessing) -> Response:
     return response
 
 
+def move_to_rec_bin(file: DataProcessing) -> Response:
+    response = requests.put(f"{data_host}/move_to_rec_bin/{file.file_id}")
+    return response
+
+
+def restore_from_rec_bin(file: DataProcessing) -> Response:
+    response = requests.put(f"{data_host}/restore_from_rec_bin/{file.file_id}")
+    return response
+
+
 def register(email: str = None, password: str = None) -> Response:
     body = {
         "email": email,

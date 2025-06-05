@@ -28,6 +28,7 @@ class Data:
             self.file = kwargs["name"]
             self.hash_func = kwargs["hash_func"]
             self.chunk_size = kwargs["chunk_quantity"]
+            self.delete_time = kwargs["delete_time"]
 
     def _get_file_size(self):
         return os.path.getsize(self.file)
